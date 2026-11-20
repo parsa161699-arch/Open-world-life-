@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>OPEN WORLD LIFE - NOVA CITY FINAL</title>
+<style>
+  *{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none} html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;font-family:Tahoma,Arial,sans-serif;touch-action:none}
+  #game{position:fixed;inset:0} canvas{display:block}
+  #hud{position:fixed;inset:0;pointer-events:none;color:#fff;text-shadow:0 2px 4px #000}
+  .panel{background:rgba(8,18,28,.72);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:8px 11px;backdrop-filter:blur(5px)}
+  #brand{position:absolute;top:10px;left:10px;font-weight:bold;font-size:13px}
+  #stats{position:absolute;top:10px;right:10px;min-width:145px;font-size:12px;line-height:1.9}
+  .bar{height:7px;background:#344454;border-radius:9px;overflow:hidden;margin:2px 0 5px}
+  .fill{height:100%;width:100%;background:#37d67a}
+  #mission{position:absolute;top:112px;right:10px;font-size:12px;max-width:185px}
+  #mini{position:absolute;top:10px;right:170px;width:105px;height:105px;border:2px solid #fff;border-radius:12px;background:rgba(0,0,0,.5)}
+  #mini canvas{width:100%;height:100%;border-radius:10px}
+  #controls{position:absolute;inset:auto 0 calc(14px + env(safe-area-inset-bottom)) 0;display:flex;justify-content:space-between;align-items:end;padding:0 16px;pointer-events:none;z-index:4}
+  .cluster{display:flex;gap:10px;align-items:end;pointer-events:auto}
+  .btn{width:64px;height:64px;border-radius:21px;border:1px solid rgba(255,255,255,.55);background:linear-gradient(145deg,rgba(77,111,142,.96),rgba(13,31,49,.98));color:#fff;font-size:25px;font-weight:bold;box-shadow:0 5px 0 rgba(0,0,0,.48),inset 0 1px 0 #ffffff30;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; outline:none}
+  .btn:active,.btn.active{transform:translateY(3px) scale(.97);box-shadow:0 1px 0 rgba(0,0,0,.48),inset 0 1px 0 #ffffff30;background:linear-gradient(145deg,#168db2,#10506f)}
+  .btn.small{width:58px;height:58px;font-size:14px;border-radius:18px}
+  #controls .cluster:first-child{margin-inline-start:0}
+  #controls button{pointer-events:auto; touch-action:none; -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  @media(max-width:520px){#controls{padding:0 12px;gap:6px}.cluster{gap:7px}.btn{width:58px;height:58px}.btn.small{width:52px;height:52px;font-size:12px}}
+  #hint{position:absolute;bottom:88px;left:50%;transform:translateX(-50%);font-size:11px;white-space:nowrap}
+  #menu{position:fixed;inset:0;background:linear-gradient(135deg,rgba(7,20,34,.96),rgba(10,55,70,.94));display:flex;align-items:center;justify-content:center;color:white;padding:22px}
+  #menu .card{max-width:440px;width:100%;text-align:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:22px;padding:24px}
+  #menu h1{font-size:27px;margin:0 0 8px;color:#8ee8ff}
+  #menu p{font-size:13px;line-height:2;color:#e5edf3}
+  #start{border:0;border-radius:14px;padding:14px 28px;background:#14a7c9;color:white;font-weight:bold;font-size:16px}
+  #mode{position:absolute;top:60px;left:10px;font-size:12px}
+  #featurebar{position:absolute;top:105px;left:10px;display:flex;flex-wrap:wrap;gap:5px;max-width:145px;pointer-events:auto}
+  .feature{border:1px solid #ffffff55;border-radius:9px;padding:7px 9px;background:#142b3ddd;color:white;font-size:11px}
+  #modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#06121ddd;color:white;padding:18px;z-index:5}
+  #modal .sheet{width:min(440px,100%);max-height:82vh;overflow:auto;background:#172b3c;border:1px solid #ffffff44;border-radius:18px;padding:18px}
+  #modal h2{margin:0 0 10px;color:#8ee8ff;font-size:20px}
+  #modal p{font-size:13px;line-height:1.8}
+  #modal .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  #modal button{border:0;border-radius:10px;padding:10px 13px;background:#168bad;color:white;font-weight:bold}
+  #modal button.secondary{background:#45596b}
+  #toast{position:absolute;bottom:155px;left:50%;transform:translateX(-50%);background:#102334e8;color:white;padding:9px 14px;border-radius:10px;font-size:12px;display:none}
+  #weather{position:absolute;top:60px;right:10px;font-size:11px}
+  @media(max-width:420px){#mini{right:158px;width:88px;height:88px}#stats{min-width:135px} .btn{width:56px;height:56px}.btn.small{width:50px;height:50px}}
+</style>
+
+<style>
+#phoneBtn{position:absolute;right:14px;bottom:88px;pointer-events:auto;width:54px;height:54px;border-radius:16px;border:1px solid #ffffff88;background:linear-gradient(145deg,#243f59,#101e30);color:white;font-size:24px}
+#phoneScreen{position:fixed;z-index:8;inset:5% 7%;max-width:430px;margin:auto;display:none;background:linear-gradient(155deg,#152b43,#071522);border:2px solid #9be8ff88;border-radius:30px;color:white;padding:16px;box-shadow:0 18px 70px #000b;overflow:auto}
+#phoneScreen .phoneTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+#phoneScreen h2{margin:4px 0;color:#a5efff}
+#phoneScreen .appGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+#phoneScreen button,.saveButtons button{border:1px solid #ffffff30;border-radius:13px;padding:12px 8px;background:#214665;color:#fff;font-weight:bold}
+#phoneScreen .appGrid button{min-height:78px;font-size:13px}
+#phoneScreen .appPage{display:none;background:#ffffff0c;border-radius:16px;padding:12px;margin-top:10px;line-height:1.9;font-size:13px}
+#phoneScreen .appPage button{margin:4px}
+#phoneScreen .phoneClose{background:#9b3545}
+#phoneScreen .backBtn{background:#53677b}
+#phoneScreen .mapPhone{width:100%;height:210px;background:#263b46;border-radius:12px}
+#saveSlots{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#npcTalk{font-size:13px;line-height:1.8}
+#interaction{position:absolute;left:50%;bottom:160px;transform:translateX(-50%);display:none;pointer-events:auto}
+@media(max-width:420px){#phoneScreen{inset:3% 3%;padding:12px}#phoneScreen .appGrid button{min-height:68px}}
+</style>
+
+</head>
+<body>
+<div id="game"></div>
+<div id="hud">
+  <div id="brand" class="panel">OPEN WORLD LIFE · NOVA CITY FINAL</div>
+  <div id="mode" class="panel">حالت: پیاده</div>
+  <div id="stats" class="panel">
+    پول: <b id="money">۱۰۰۰</b> سکه<br>
+    جان <div class="bar"><div class="fill" id="health"></div></div>
+    سپر <div class="bar"><div class="fill" id="shield" style="background:#42b9ff"></div></div>
+    غذا <div class="bar"><div class="fill" id="food" style="background:#ffc247"></div></div>
+    آب <div class="bar"><div class="fill" id="water" style="background:#39c9ef"></div></div>
+  </div>
+  <div id="mini"><canvas id="map" width="120" height="120"></canvas></div>
+  <div id="mission" class="panel">مأموریت: شهر را بگرد و ماشین آبی را پیدا کن.</div>
+  <div id="weather" class="panel">NOVA CITY | هوا: آفتابی | روز</div>
+  <div id="featurebar">
+    <button class="feature" data-panel="missions">مأموریت‌ها</button>
+    <button class="feature" data-panel="jobs">شغل‌ها</button>
+    <button class="feature" data-panel="shop">فروشگاه</button>
+    <button class="feature" data-panel="garage">گاراژ</button>
+    <button class="feature" data-panel="wardrobe">لباس‌ها</button>
+    <button class="feature" data-panel="equipment">تجهیزات</button>
+    <button class="feature" data-panel="equipment">تجهیزات</button>
+    <button class="feature" data-panel="settings">تنظیمات</button>
+    <button class="feature" id="weatherBtn">تغییر هوا</button>
+    <button class="feature" id="timeBtn">روز/شب</button>
+  </div>
+  <div id="toast"></div>
+  <div id="gearStatus" class="panel" style="position:absolute;left:10px;top:155px;font-size:11px">تجهیزات: خالی</div>
+  <div id="hint" class="panel">حرکت با دکمه‌ها • دکمه 🚗 برای سوار/پیاده شدن</div>
+  <div id="controls">
+    <div class="cluster">
+      <button class="btn" data-key="left">◀</button>
+      <button class="btn" data-key="right">▶</button>
+    </div>
+    <div class="cluster">
+      <button class="btn small" id="jump">پرش</button>
+      <button class="btn small" id="enter">🚗</button>
+      <button class="btn small" id="camera">دوربین</button>
+      <button class="btn small" id="gearBtn">تجهیزات</button>
+    </div>
+    <div class="cluster">
+      <button class="btn" data-key="forward">▲</button>
+      <button class="btn" data-key="back">▼</button>
+    </div>
+  </div>
+</div>
+<div id="menu">
+ <div class="card">
+  <h1>OPEN WORLD LIFE</h1>
+  <p>NOVA CITY — نسخه آزمایشی واقع‌گرایانه<br>در خیابان‌های شهر حرکت کن، رانندگی کن و مناطق مختلف را کشف کن.<br><small>نسخه نهایی آزمایشی · لباس NPC · تجهیزات بازی · شهر ساحلی</small></p>
+  <button id="start">شروع بازی</button>
+ </div>
+</div>
+
+<button id="phoneBtn" aria-label="گوشی">📱</button>
+<button id="interaction" class="feature">گفت‌وگو / تعامل</button>
+<div id="phoneScreen">
+  <div class="phoneTop"><div><b>📱 OPEN PHONE</b><div style="font-size:11px;color:#b7d5e5">گوشی هوشمند داخل بازی</div></div><button class="phoneClose" id="phoneClose">✕</button></div>
+  <div id="phoneHome">
+    <div style="font-size:12px;color:#c7d9e7">سلام! از برنامه‌های گوشی استفاده کن.</div>
+    <div class="appGrid">
+      <button data-app="citymap">🗺️<br>نقشه شهر</button>
+      <button data-app="messages">💬<br>پیام‌ها</button>
+      <button data-app="calls">📞<br>تماس‌ها</button>
+      <button data-app="phoneMissions">🎯<br>مأموریت‌ها</button>
+      <button data-app="taxi">🚕<br>درخواست تاکسی</button>
+      <button data-app="saves">💾<br>ذخیره بازی</button>
+    </div>
+  </div>
+  <div class="appPage" id="app-citymap"><h2>🗺️ نقشه شهر</h2><canvas id="phoneMap" class="mapPhone" width="360" height="210"></canvas><p>نقطه زرد: موقعیت تو | نقطه‌های آبی: خودروها و مکان‌های مهم</p></div>
+  <div class="appPage" id="app-messages"><h2>💬 پیام‌ها</h2><div id="messageList">پیام جدیدی نداری. پیام‌های مأموریت‌ها اینجا نمایش داده می‌شوند.</div></div>
+  <div class="appPage" id="app-calls"><h2>📞 تماس‌ها</h2><p>مرکز تاکسی شهر: برای درخواست خودرو از برنامه تاکسی استفاده کن.</p><button id="callTaxi">تماس با تاکسی</button><p>خدمات شهری: در حال حاضر در دسترس نیست.</p></div>
+  <div class="appPage" id="app-phoneMissions"><h2>🎯 مأموریت‌ها</h2><div id="phoneMissionList"></div></div>
+  <div class="appPage" id="app-taxi"><h2>🚕 تاکسی آنلاین</h2><p>هزینه درخواست تاکسی: ۳۰ سکه</p><p id="taxiStatus">هنوز تاکسی درخواست نکرده‌ای.</p><button id="orderTaxi">درخواست تاکسی - ۳۰ سکه</button></div>
+  <div class="appPage" id="app-saves"><h2>💾 فایل‌های ذخیره</h2><p>سه جایگاه مستقل ذخیره روی همین مرورگر</p><div id="saveSlots"></div></div>
+  <div style="display:flex;justify-content:center;margin-top:12px"><button id="phoneBack" class="backBtn">بازگشت به صفحه اصلی</button></div>
+</div>
+
+<div id="modal">
+  <div class="sheet">
+    <h2 id="modalTitle">منو</h2>
+    <div id="modalBody"></div>
+    <div class="actions"><button class="secondary" id="closeModal">بستن</button></div>
+  </div>
+</div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const $=id=>document.getElementById(id);
+const root=$('game');
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x9bc9df);
+scene.fog=new THREE.Fog(0x9bc9df,65,250);
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,420);
+const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'low-power'});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.15));
+renderer.shadowMap.enabled=false;
+root.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x627080,2));
+const sun=new THREE.DirectionalLight(0xffffff,1.35);
+sun.position.set(-30,60,25);sun.castShadow=false;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+const mat=(color)=>new THREE.MeshStandardMaterial({color,roughness:.88});
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(320,320),mat(0x56835b));
+ground.rotation.x=-Math.PI/2;ground.position.y=-.06;scene.add(ground);
+// Coastal edge, promenade and a distant skyline establish NOVA CITY's mixed seaside/modern identity.
+const sea=new THREE.Mesh(new THREE.PlaneGeometry(320,72),new THREE.MeshStandardMaterial({color:0x24677d,metalness:.18,roughness:.32}));sea.rotation.x=-Math.PI/2;sea.position.set(0,-.025,142);scene.add(sea);
+const beach=new THREE.Mesh(new THREE.PlaneGeometry(320,18),mat(0xc6b58e));beach.rotation.x=-Math.PI/2;beach.position.set(0,-.015,100);scene.add(beach);
+const promenade=new THREE.Mesh(new THREE.BoxGeometry(320,.18,5),mat(0xaaa99f));promenade.position.set(0,.02,89);scene.add(promenade);
+for(let i=-140;i<=140;i+=18){const h=28+Math.random()*34,w=8+Math.random()*7;const tower=new THREE.Mesh(new THREE.BoxGeometry(w,h,9),mat([0x657987,0x7e8d96,0x9aabb1][Math.floor(Math.random()*3)]));tower.position.set(i,h/2,65);scene.add(tower);for(let y=5;y<h-3;y+=5){const strip=new THREE.Mesh(new THREE.BoxGeometry(w*.82,.16,.06),new THREE.MeshStandardMaterial({color:0x9bc8d8,emissive:0x1b3947}));strip.position.set(i,y,69.56);scene.add(strip)}}
+
+
+function box(w,h,d,color,x,y,z,parent=scene){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));
+ m.position.set(x,y,z);parent.add(m);return m;
+}
+const road=mat(0x343b43),sidewalkMat=mat(0x9b9fa1);
+function roadX(z){const m=new THREE.Mesh(new THREE.BoxGeometry(320,.04,12),road);m.position.set(0,0,z);scene.add(m)}
+function roadZ(x){const m=new THREE.Mesh(new THREE.BoxGeometry(12,.04,320),road);m.position.set(x,0,0);scene.add(m)}
+for(let i=-120;i<=120;i+=40){
+ roadX(i);roadZ(i);
+ for(const side of [-1,1]){
+  const sx=new THREE.Mesh(new THREE.BoxGeometry(320,.12,2),sidewalkMat);sx.position.set(0,.02,i+side*7);scene.add(sx);
+  const sz=new THREE.Mesh(new THREE.BoxGeometry(2,.12,320),sidewalkMat);sz.position.set(i+side*7,.02,0);scene.add(sz);
+ }
+}
+for(let i=-150;i<=150;i+=8){box(3,.025,.18,0xe8dca0,i,.035,0);box(.18,.025,3,0xe8dca0,0,.035,i)}
+
+// City blocks and collision data
+const buildingColliders=[];
+const buildingColors=[0xc8b8a0,0xb4c6cc,0xd5c7ae,0x9baeb8,0xd7d1c4,0xb7a6a0];
+for(let x=-120;x<=120;x+=20){
+ for(let z=-120;z<=120;z+=20){
+  if(Math.abs(x%40)<12 || Math.abs(z%40)<12)continue;
+  const h=8+Math.random()*20,w=8+Math.random()*5,d=8+Math.random()*5;
+  buildingColliders.push({x,z,w,d});
+  box(w,h,d,buildingColors[Math.floor(Math.random()*buildingColors.length)],x,h/2,z);
+  const winmat=new THREE.MeshStandardMaterial({color:0x7bb6c9,emissive:0x18313b});
+  for(let yy=3;yy<h-1;yy+=4)for(let xx=-w/2+1.5;xx<w/2-1;xx+=3){
+   const win=new THREE.Mesh(new THREE.BoxGeometry(.9,1.2,.08),winmat);
+   win.position.set(x+xx,yy,z+d/2+.05);scene.add(win);
+  }
+ }
+}
+// Park trees (stored as obstacles too)
+const treeColliders=[];
+for(let i=0;i<95;i++){
+ const x=(Math.random()-.5)*290,z=(Math.random()-.5)*290;
+ if(Math.abs(x%40)<8||Math.abs(z%40)<8)continue;
+ const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.22,.3,2),mat(0x76513a));
+ trunk.position.set(x,1,z);scene.add(trunk);
+ const crown=new THREE.Mesh(new THREE.SphereGeometry(1.5,7,6),mat(0x347447));
+ crown.position.set(x,3,z);scene.add(crown);treeColliders.push({x,z,r:1.05});
+}
+
+// Landmark house with enterable interior
+const house=new THREE.Group();scene.add(house);house.position.set(-25,0,25);
+const houseBase=new THREE.Mesh(new THREE.BoxGeometry(10,7,9),mat(0xd2b98f));houseBase.position.y=3.5;house.add(houseBase);
+const roof=new THREE.Mesh(new THREE.ConeGeometry(7.5,4,4),mat(0x8b4d3d));roof.position.y=9;roof.rotation.y=Math.PI/4;house.add(roof);
+box(2,3,.2,0x543a2a,-25,1.5,20.4);
+const houseInterior=new THREE.Group();houseInterior.visible=false;scene.add(houseInterior);
+box(10,.2,9,0x9b7959,-25,.1,25,houseInterior);
+box(10,4,.2,0xd8c8a8,-25,2,20.5,houseInterior);
+box(10,4,.2,0xd8c8a8,-25,2,29.5,houseInterior);
+box(.2,4,9,0xd8c8a8,-30,2,25,houseInterior);
+box(.2,4,9,0xd8c8a8,-20,2,25,houseInterior);
+box(2,1,2,0x654b39,-27,.7,24,houseInterior);
+let insideHouse=false;
+
+// Player
+const player=new THREE.Group();scene.add(player);
+const body=new THREE.Mesh(new THREE.CapsuleGeometry(.34,.78,5,10),new THREE.MeshStandardMaterial({color:0x263f55,roughness:.8}));body.position.y=1.28;player.add(body);
+const head=new THREE.Mesh(new THREE.SphereGeometry(.255,16,12),new THREE.MeshStandardMaterial({color:0xb98261,roughness:.86}));head.position.y=2.08;player.add(head);
+const hair=new THREE.Mesh(new THREE.SphereGeometry(.26,14,8,0,Math.PI*2,0,Math.PI*.48),mat(0x24201d));hair.position.y=2.19;player.add(hair);
+const legs=new THREE.Group();player.add(legs);
+for(const x of [-.19,.19]){const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.13,.55,4,8),mat(0x202a35));leg.position.set(x,.48,0);legs.add(leg);const shoe=new THREE.Mesh(new THREE.BoxGeometry(.25,.13,.38),mat(0x111418));shoe.position.set(x,.12,.07);legs.add(shoe)}
+for(const x of [-.43,.43]){const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.105,.58,4,7),mat(0x263f55));arm.position.set(x,1.3,0);arm.rotation.z=x*.55;player.add(arm)}
+player.position.set(2,0,3);
+// Fictional, arcade-style equipment props: visual-only; no real-world weapon handling.
+const equipment=[
+ {id:'pulse',name:'تفنگ پالس خیالی',color:0x28b9d8,price:0},
+ {id:'blaster',name:'بلستر انرژی',color:0x9b75e8,price:250},
+ {id:'baton',name:'باتوم انرژی',color:0x48d38a,price:120}
+];
+let ownedEquipment=['pulse'],activeEquipment='';
+const equipmentProp=new THREE.Group();equipmentProp.visible=false;player.add(equipmentProp);
+function buildEquipmentProp(id){
+ while(equipmentProp.children.length)equipmentProp.remove(equipmentProp.children[0]);
+ if(!id){equipmentProp.visible=false;return}
+ equipmentProp.visible=true;
+ const glow=equipment.find(x=>x.id===id)?.color||0x28b9d8;
+ const bodyMat=new THREE.MeshStandardMaterial({color:id==='baton'?glow:0x263746,metalness:.45,roughness:.35,emissive:glow,emissiveIntensity:.18});
+ if(id==='baton'){
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.9,8),bodyMat);shaft.rotation.x=Math.PI/2;shaft.position.set(.42,1.05,.32);equipmentProp.add(shaft);
+ }else{
+  const core=new THREE.Mesh(new THREE.BoxGeometry(.18,.16,.58),bodyMat);core.position.set(.42,1.12,.36);equipmentProp.add(core);
+  const grip=new THREE.Mesh(new THREE.BoxGeometry(.13,.25,.16),mat(0x151d25));grip.position.set(.42,.94,.18);equipmentProp.add(grip);
+  const energyTip=new THREE.Mesh(new THREE.SphereGeometry(.105,8,8),new THREE.MeshStandardMaterial({color:glow,emissive:glow,emissiveIntensity:.65}));energyTip.position.set(.42,1.12,.68);equipmentProp.add(energyTip);
+ }
+}
+function selectEquipment(id){
+ if(!ownedEquipment.includes(id)){toast('این وسیله هنوز خریداری نشده است.');return}
+ activeEquipment=activeEquipment===id?'':id;buildEquipmentProp(activeEquipment);
+ toast(activeEquipment?'تجهیز انتخاب شد: '+equipment.find(x=>x.id===id).name:'تجهیز کنار گذاشته شد.');
+}
+
+
+// Vehicle builder
+function makeCar(color=0x087fce){
+ const g=new THREE.Group();
+ const paint=new THREE.MeshStandardMaterial({color,metalness:.62,roughness:.3});
+ const glass=new THREE.MeshStandardMaterial({color:0x263c4c,metalness:.25,roughness:.18,transparent:true,opacity:.92});
+ const rubber=new THREE.MeshStandardMaterial({color:0x111316,roughness:.92});
+ const metal=new THREE.MeshStandardMaterial({color:0xb8c2c8,metalness:.8,roughness:.22});
+ const lower=new THREE.Mesh(new THREE.BoxGeometry(3.45,.48,6.1),rubber);lower.position.y=.72;g.add(lower);
+ const shell=new THREE.Mesh(new THREE.BoxGeometry(3.5,.78,5.9),paint);shell.position.y=1.05;g.add(shell);
+ const hood=new THREE.Mesh(new THREE.BoxGeometry(3.25,.18,1.55),paint);hood.position.set(0,1.48,2.02);g.add(hood);
+ const cabin=new THREE.Mesh(new THREE.BoxGeometry(2.65,.95,2.75),glass);cabin.position.set(0,1.88,-.35);g.add(cabin);
+ const roof=new THREE.Mesh(new THREE.BoxGeometry(2.5,.12,1.8),paint);roof.position.set(0,2.4,-.45);g.add(roof);
+ for(const x of [-1.25,1.25]){
+  const side=new THREE.Mesh(new THREE.BoxGeometry(.08,.72,2.3),glass);side.position.set(x,1.9,-.35);g.add(side);
+ }
+ for(const x of [-1.22,1.22]){
+  const head=new THREE.Mesh(new THREE.BoxGeometry(.72,.2,.08),new THREE.MeshStandardMaterial({color:0xeaf7ff,emissive:0x7899aa,emissiveIntensity:.7}));head.position.set(x,1.23,3.0);g.add(head);
+  const tail=new THREE.Mesh(new THREE.BoxGeometry(.65,.18,.08),new THREE.MeshStandardMaterial({color:0xa51f20,emissive:0x550000}));tail.position.set(x,1.2,-3.0);g.add(tail);
+ }
+ for(const x of [-1.78,1.78])for(const z of [-1.95,1.95]){
+  const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.57,.57,.34,18),rubber);wheel.rotation.z=Math.PI/2;wheel.position.set(x,.58,z);g.add(wheel);
+  const hub=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,.36,12),metal);hub.rotation.z=Math.PI/2;hub.position.set(x,.58,z);g.add(hub);
+ }
+ g.userData.shell=shell;return g;
+}
+const car=makeCar();scene.add(car);car.position.set(14,0,5);
+const ownedCars=[car];
+let taxi=null,taxiTimer=0;
+
+// Traffic lights
+const trafficLights=[];
+for(const p of [{x:0,z:0},{x:40,z:40},{x:-40,z:-40},{x:80,z:0}]){
+ const pole=new THREE.Group();scene.add(pole);pole.position.set(p.x+8,0,p.z+8);
+ box(.22,4,.22,0x34383b,0,2,0,pole);
+ box(.7,1.8,.45,0x20252b,0,3.4,0,pole);
+ const lamps=[];
+ for(let j=0;j<3;j++){
+  const l=new THREE.Mesh(new THREE.SphereGeometry(.18,8,8),mat([0xff3030,0xffc928,0x26db66][j]));
+  l.position.set(0,4-j*.55,.25);pole.add(l);lamps.push(l);
+ }
+ trafficLights.push({lamps,phase:Math.random()*12});
+}
+
+// NPC pedestrians
+const npcs=[];
+const skinColors=[0xd6a77e,0x9d6849,0xf0c9a2,0x7c503d];
+const shirtColors=[0xb83b48,0x347db5,0x3d8a58,0x8c65b8,0xd18a32];
+const npcRoles=[
+ {name:'شهروند',shirt:0x347db5,pants:0x263746,accent:0x303030},
+ {name:'پلیس',shirt:0x172f55,pants:0x172f55,accent:0xd5b34c},
+ {name:'پزشک',shirt:0xe6e9e8,pants:0x42586a,accent:0x4aa6a0},
+ {name:'کارگر',shirt:0xd47a25,pants:0x343b43,accent:0xf0d65a},
+ {name:'پیک',shirt:0x3d8a58,pants:0x273b32,accent:0xd9e2e6},
+ {name:'نگهبان',shirt:0x454b55,pants:0x202833,accent:0xb7c3cc}
+];
+for(let i=0;i<22;i++){
+ const npc=new THREE.Group();scene.add(npc);
+ const role=npcRoles[i%npcRoles.length];
+ const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.32,.65,3,6),mat(role.shirt));torso.position.y=1.05;npc.add(torso);
+ const h=new THREE.Mesh(new THREE.SphereGeometry(.25,8,7),mat(skinColors[i%skinColors.length]));h.position.y=1.75;npc.add(h);
+ const hairCap=new THREE.Mesh(new THREE.SphereGeometry(.255,8,6,0,Math.PI*2,0,Math.PI*.48),mat(i%3===0?0x292522:0x49372b));hairCap.position.y=1.86;npc.add(hairCap);
+ // Distinct trousers, shoes and role accessories make each pedestrian recognizable.
+ for(const x of [-.17,.17]){const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.55,3,6),mat(role.pants));leg.position.set(x,.43,0);npc.add(leg);const shoe=new THREE.Mesh(new THREE.BoxGeometry(.24,.12,.32),mat(0x171b20));shoe.position.set(x,.1,.07);npc.add(shoe)}
+ for(const x of [-.4,.4]){const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.09,.52,3,6),mat(role.shirt));arm.position.set(x,1.08,0);arm.rotation.z=x*.45;npc.add(arm)}
+ if(role.name==='پلیس'||role.name==='نگهبان'){
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(.22,.24,.12,8),mat(role.accent));cap.position.y=2.02;npc.add(cap);
+  const badge=new THREE.Mesh(new THREE.BoxGeometry(.16,.2,.035),mat(0xe5c65b));badge.position.set(0,1.25,.31);npc.add(badge);
+ }else if(role.name==='پزشک'){
+  const coatLine=new THREE.Mesh(new THREE.BoxGeometry(.08,.48,.035),mat(role.accent));coatLine.position.set(0,1.05,.31);npc.add(coatLine);
+ }else if(role.name==='کارگر'){
+  const vest=new THREE.Mesh(new THREE.BoxGeometry(.58,.16,.34),mat(role.accent));vest.position.set(0,.93,.02);npc.add(vest);
+  const helmet=new THREE.Mesh(new THREE.SphereGeometry(.27,8,5,0,Math.PI*2,0,Math.PI*.5),mat(0xe4a52b));helmet.position.y=1.91;npc.add(helmet);
+ }else if(role.name==='پیک'){
+  const bag=new THREE.Mesh(new THREE.BoxGeometry(.48,.55,.22),mat(0x253f35));bag.position.set(0,1.1,-.28);npc.add(bag);
+ }
+ npc.position.set((Math.random()-.5)*230,0,(Math.random()-.5)*230);
+ npcs.push({mesh:npc,role:role.name,angle:Math.random()*Math.PI*2,speed:1.1+Math.random()*.7,turn:0});
+}
+
+// AI traffic cars follow road lanes and stop at red lights
+const traffic=[];
+for(let i=0;i<9;i++){
+ const v=makeCar([0xc34b3b,0xe0c54a,0xeeeeee,0x434d59,0x3b9b77][i%5]);
+ scene.add(v);
+ const axis=i%2?'x':'z',lane=(Math.floor(i/2)%3-1)*40+2;
+ v.position.set(axis==='x'?-130+i*5:lane,0,axis==='x'?lane:-130+i*5);
+ v.rotation.y=axis==='x'?Math.PI/2:0;
+ traffic.push({mesh:v,axis,speed:5+Math.random()*3,lane});
+}
+
+function blockedAt(x,z,radius){
+ if(Math.abs(x)>151-radius||Math.abs(z)>151-radius)return true;
+ if(buildingColliders.some(b=>Math.abs(x-b.x)<b.w/2+radius&&Math.abs(z-b.z)<b.d/2+radius))return true;
+ if(treeColliders.some(t=>Math.hypot(x-t.x,z-t.z)<t.r+radius))return true;
+ return false;
+}
+const keys={};let driving=false,speed=0,camMode=0,started=false;
+let money=1000,weatherIndex=0,isNight=false,quality='Medium',ownedCar=false,selectedJob='';
+let health=100,shield=100,food=100,water=100,coinsFound=0,clothes=['لباس آبی'],activeClothes=0;
+function openPanel(kind){
+ const panels={
+ missions:['مأموریت‌ها',`<p>۱. گشت شهر: ۱۰۰ سکه</p><p>۲. رانندگی: ۱۵۰ سکه</p><p>۳. پیدا کردن سکه‌های مخفی: هر سکه ۲۵</p><p>۴. بازدید از خانه: ۱۲۰ سکه</p><button data-action="mission-walk">ثبت گشت شهر</button> <button data-action="mission-drive">ثبت رانندگی</button>`],
+ jobs:['شغل‌ها',`<p>برای شروع یک شغل انتخاب کن. با انجام فعالیت مرتبط دستمزد می‌گیری.</p><button data-job="راننده تاکسی">راننده تاکسی</button> <button data-job="پیک">پیک</button> <button data-job="مکانیک">مکانیک</button> <button data-job="راننده اتوبوس">راننده اتوبوس</button>`],
+ shop:['فروشگاه',`<p>غذا و آب مصرفی، لباس‌های قابل انتخاب و ظاهر شخصیت.</p><button data-buy="food">خرید غذا - ۵۰</button> <button data-buy="clothes">لباس جدید - ۲۰۰</button> <button data-buy="water">آب - ۳۰</button>`],
+ garage:['گاراژ',`<p>خودروهای خریداری‌شده و خدمات تعمیر.</p><button data-buy="car">خرید خودروی دوم - ۷۰۰</button> <button data-buy="paint">تغییر رنگ ماشین - ۱۰۰</button> <button data-action="repair">تعمیر خودرو - ۸۰</button><p>تعداد خودروهای شخصی: ${ownedCars.length}</p>`],
+ wardrobe:['لباس‌ها و ظاهر',`<p>لباس شخصیت اصلی را انتخاب کن.</p><button data-outfit="0">لباس شهری</button> <button data-outfit="1">لباس تیره</button> <button data-outfit="2">لباس اسپرت</button> <button data-outfit="3">لباس رسمی</button><p>NPCها نیز لباس مخصوص نقش خودشان را دارند.</p>`],
+ equipment:['تجهیزات بازی',`<p>وسایل کاملاً خیالی و آرکید هستند و فقط ظاهر نمایشی دارند.</p>${equipment.map(w=>`<p>${w.name} — ${ownedEquipment.includes(w.id)?'در اختیار':'قیمت: '+w.price+' سکه'}</p><button data-equip="${w.id}">${ownedEquipment.includes(w.id)?(activeEquipment===w.id?'برداشتن':'انتخاب'): 'خرید و انتخاب'}</button>`).join('')}<p>برای استفاده نمایشی، از حالت پیاده استفاده کن.</p>`],
+ settings:['تنظیمات',`<p>کیفیت گرافیک را انتخاب کن:</p><button data-quality="Low">Low</button> <button data-quality="Medium">Medium</button> <button data-quality="High">High</button> <button data-quality="Ultra">Ultra</button><p>کیفیت سایه، وضوح رندر و فاصله دید با توجه به توان دستگاه تنظیم می‌شود.</p>`]
+ };
+ $('modalTitle').textContent=panels[kind][0];$('modalBody').innerHTML=panels[kind][1];$('modal').style.display='flex';
+}
+document.querySelectorAll('[data-panel]').forEach(b=>b.addEventListener('click',()=>openPanel(b.dataset.panel)));
+$('gearBtn').addEventListener('pointerdown',e=>{e.preventDefault();openPanel('equipment')});
+$('closeModal').onclick=()=>$('modal').style.display='none';
+$('modalBody').addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.buy){
+  const costs={food:50,clothes:200,water:30,car:700,paint:100},cost=costs[b.dataset.buy];
+  if(money<cost){toast('پول کافی نداری!');return}setMoney(money-cost);
+  if(b.dataset.buy==='food'){food=100;updateBars();toast('غذا خریدی.')}
+  else if(b.dataset.buy==='water'){water=100;updateBars();toast('آب خریدی.')}
+  else if(b.dataset.buy==='clothes'){clothes.push('لباس شماره '+(clothes.length+1));activeClothes=clothes.length-1;body.material.color.setHex([0x245b9a,0x9b3f75,0x347a4d,0x333333][activeClothes%4]);toast('لباس جدید خریداری و پوشیده شد.')}
+  else if(b.dataset.buy==='car'){const c=makeCar(0x9b4fc1);c.position.set(car.position.x+5,0,car.position.z+5);scene.add(c);ownedCars.push(c);ownedCar=true;toast('خودروی دوم به گاراژ اضافه شد.')}
+  else if(b.dataset.buy==='paint'){car.userData.shell.material.color.setHex(Math.random()*0xffffff);toast('رنگ ماشین تغییر کرد.')}
+ }
+ if(b.dataset.equip){
+  const item=equipment.find(w=>w.id===b.dataset.equip);
+  if(item&&!ownedEquipment.includes(item.id)){if(money<item.price){toast('پول کافی نداری!');return}setMoney(money-item.price);ownedEquipment.push(item.id)}
+  selectEquipment(b.dataset.equip);openPanel('equipment');return;
+ }
+ if(b.dataset.job){selectedJob=b.dataset.job;toast('شغل انتخاب شد: '+selectedJob);$('mission').textContent='شغل فعال: '+selectedJob}
+ if(b.dataset.outfit){activeClothes=+b.dataset.outfit;const colors=[0x263f55,0x24272d,0x2f6b55,0x4b5267];body.material.color.setHex(colors[activeClothes]);toast('لباس شخصیت تغییر کرد.')}
+ if(b.dataset.quality){quality=b.dataset.quality;const q={Low:.75,Medium:1.15,High:1.5,Ultra:1.85};renderer.setPixelRatio(Math.min(devicePixelRatio,q[quality]||1.15));renderer.shadowMap.enabled=quality==='High'||quality==='Ultra';sun.castShadow=renderer.shadowMap.enabled;renderer.setSize(innerWidth,innerHeight);toast('کیفیت گرافیک: '+quality)}
+ if(b.dataset.action==='repair'){if(money>=80){setMoney(money-80);speed=0;health=100;updateBars();toast('خودرو تعمیر شد.')}else toast('پول کافی نداری!')}
+ if(b.dataset.action==='mission-walk'){if(!missions.walk){missions.walk=true;setMoney(money+100+(selectedJob?50:0));toast('گشت شهر ثبت شد؛ پاداش دریافت کردی.')}else toast('این مأموریت قبلاً انجام شده است.')}
+ if(b.dataset.action==='mission-drive'){if(!missions.drive){missions.drive=true;setMoney(money+150+(selectedJob?50:0));toast('رانندگی ثبت شد؛ پاداش دریافت کردی.')}else toast('این مأموریت قبلاً انجام شده است.')}
+});
+$('weatherBtn').onclick=()=>{
+ weatherIndex=(weatherIndex+1)%weatherNames.length;
+ const colors=[0x9bc9df,0x899aa7,0x70889b,0x596b7b,0x9ba8ae];
+ scene.background.setHex(colors[weatherIndex]);scene.fog.color.setHex(colors[weatherIndex]);
+ $('weather').textContent='هوا: '+weatherNames[weatherIndex]+' | '+(isNight?'شب':'روز');toast('وضعیت هوا: '+weatherNames[weatherIndex]);
+};
+$('timeBtn').onclick=()=>{isNight=!isNight;scene.background.setHex(isNight?0x101b32:0x9bc9df);sun.intensity=isNight?.25:1.5;$('weather').textContent='هوا: '+weatherNames[weatherIndex]+' | '+(isNight?'شب':'روز');toast(isNight?'حالت شب':'حالت روز')};
+
+document.querySelectorAll('[data-key]').forEach(btn=>{
+ const k=btn.dataset.key;
+ const down=e=>{e.preventDefault();if(btn.setPointerCapture&&e.pointerId!==undefined)btn.setPointerCapture(e.pointerId);keys[k]=true;btn.classList.add('active')};
+ const up=e=>{if(e)e.preventDefault();keys[k]=false;btn.classList.remove('active')};
+ btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('lostpointercapture',up);btn.addEventListener('pointercancel',up);
+});
+$('enter').addEventListener('pointerdown',e=>{
+ e.preventDefault();if($('enter').setPointerCapture&&e.pointerId!==undefined)$('enter').setPointerCapture(e.pointerId);
+ if(insideHouse){insideHouse=false;houseInterior.visible=false;house.visible=true;player.visible=true;player.position.set(-25,0,18);toast('از خانه خارج شدی.');return}
+ driving=!driving;$('mode').textContent='حالت: '+(driving?'رانندگی':'پیاده');
+ if(driving){car.position.set(player.position.x+2,0,player.position.z);player.visible=false;equipmentProp.visible=false}
+ else{player.visible=true;player.position.set(car.position.x+3,0,car.position.z);equipmentProp.visible=!!activeEquipment}
+});
+$('camera').addEventListener('pointerdown',e=>{e.preventDefault();if($('camera').setPointerCapture&&e.pointerId!==undefined)$('camera').setPointerCapture(e.pointerId);camMode=(camMode+1)%3});
+$('jump').addEventListener('pointerdown',e=>{e.preventDefault();if($('jump').setPointerCapture&&e.pointerId!==undefined)$('jump').setPointerCapture(e.pointerId);if(!driving){player.position.y=.8;setTimeout(()=>player.position.y=0,350)}});
+$('start').onclick=()=>{$('menu').style.display='none';started=true};
+
+// Phone interface
+let activeApp='';
+function openPhone(){ $('phoneScreen').style.display='block';$('phoneHome').style.display='block';document.querySelectorAll('.appPage').forEach(p=>p.style.display='none');activeApp='';refreshPhone();}
+function closePhone(){$('phoneScreen').style.display='none'}
+$('phoneBtn').onclick=openPhone;$('phoneClose').onclick=closePhone;
+$('phoneBack').onclick=()=>{document.querySelectorAll('.appPage').forEach(p=>p.style.display='none');$('phoneHome').style.display='block';activeApp=''};
+document.querySelectorAll('[data-app]').forEach(b=>b.onclick=()=>{
+ $('phoneHome').style.display='none';document.querySelectorAll('.appPage').forEach(p=>p.style.display='none');
+ activeApp=b.dataset.app;$('app-'+activeApp).style.display='block';refreshPhone();
+});
+function refreshPhone(){
+ $('phoneMissionList').innerHTML=`<p>گشت شهر: ${missions.walk?'انجام شد':'در انتظار'}</p><p>رانندگی: ${missions.drive?'انجام شد':'در انتظار'}</p><p>سکه مخفی: ${coinsFound}/12</p><p>خانه: ${missions.home?'بازدید شد':'در انتظار'}</p>`;
+ $('messageList').innerHTML=`<p>📩 مرکز شهر: به OPEN WORLD LIFE خوش آمدی!</p><p>📩 راهنما: ${coinsFound} سکه مخفی پیدا کرده‌ای.</p>`;
+ drawPhoneMap();renderSaveSlots();
+}
+function drawPhoneMap(){
+ const c=$('phoneMap');if(!c)return;const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#294b3e';ctx.fillRect(0,0,c.width,c.height);
+ ctx.strokeStyle='#b7bfc4';ctx.lineWidth=8;
+ for(let i=20;i<c.width;i+=48){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,c.height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(c.width,i);ctx.stroke()}
+ const p=driving?car.position:player.position;ctx.fillStyle='#ffe05c';ctx.beginPath();ctx.arc(c.width/2+p.x*.55,c.height/2+p.z*.55,6,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#58d6ff';ctx.fillRect(40,40,7,7);ctx.fillRect(290,150,7,7);
+}
+function orderTaxi(){
+ if(money<30){toast('برای تاکسی ۳۰ سکه لازم داری.');return}
+ setMoney(money-30);taxi=makeCar(0xf2c53d);taxi.position.set(player.position.x+35,0,player.position.z+35);scene.add(taxi);taxiTimer=8;
+ $('taxiStatus').textContent='تاکسی در راه است؛ چند لحظه صبر کن.';toast('تاکسی درخواست شد!');
+}
+$('orderTaxi').onclick=orderTaxi;$('callTaxi').onclick=orderTaxi;
+
+// Three independent local save slots
+function gameSnapshot(){
+ return {money,player:{x:player.position.x,z:player.position.z,ry:player.rotation.y},car:{x:car.position.x,z:car.position.z,ry:car.rotation.y,color:car.userData.shell.material.color.getHex()},driving,health,shield,food,water,weatherIndex,isNight,quality,ownedCar,selectedJob,missions,coinsFound,clothes,activeClothes,ownedEquipment,activeEquipment,ownedCars:ownedCars.map(v=>({x:v.position.x,z:v.position.z,ry:v.rotation.y,color:v.userData.shell.material.color.getHex()}))};
+}
+function saveSlot(i){try{localStorage.setItem('owl_save_'+i,JSON.stringify(gameSnapshot()));toast('بازی در جایگاه '+(i+1)+' ذخیره شد.')}catch(e){toast('ذخیره‌سازی در این مرورگر ممکن نیست.')}renderSaveSlots()}
+function loadSlot(i){
+ const raw=localStorage.getItem('owl_save_'+i);if(!raw){toast('این جایگاه خالی است.');return}
+ try{
+  const s=JSON.parse(raw);money=s.money??1000;player.position.set(s.player?.x??2,0,s.player?.z??3);player.rotation.y=s.player?.ry??0;
+  car.position.set(s.car?.x??14,0,s.car?.z??5);car.rotation.y=s.car?.ry??0;if(s.car?.color)car.userData.shell.material.color.setHex(s.car.color);
+  driving=!!s.driving;player.visible=!driving;$('mode').textContent='حالت: '+(driving?'رانندگی':'پیاده');
+  health=s.health??100;shield=s.shield??100;food=s.food??100;water=s.water??100;weatherIndex=s.weatherIndex??0;isNight=!!s.isNight;quality=s.quality??'Medium';ownedCar=!!s.ownedCar;selectedJob=s.selectedJob??'';missions=s.missions??missions;coinsFound=s.coinsFound??0;clothes=s.clothes??['لباس آبی'];activeClothes=s.activeClothes??0;ownedEquipment=s.ownedEquipment??['pulse'];activeEquipment=s.activeEquipment??'';buildEquipmentProp(activeEquipment);
+  body.material.color.setHex([0x245b9a,0x9b3f75,0x347a4d,0x333333][activeClothes%4]);
+  // Rebuild saved personal vehicles (the first vehicle remains the primary car).
+  while(ownedCars.length>1){const old=ownedCars.pop();scene.remove(old)}
+  if(Array.isArray(s.ownedCars)){
+   s.ownedCars.slice(1).forEach(v=>{const extra=makeCar(v.color??0x9b4fc1);extra.position.set(v.x??0,0,v.z??0);extra.rotation.y=v.ry??0;scene.add(extra);ownedCars.push(extra)});
+  }
+  refreshMoney();updateBars();$('weather').textContent='هوا: '+weatherNames[weatherIndex]+' | '+(isNight?'شب':'روز');toast('ذخیره بارگذاری شد.');
+ }catch(e){toast('فایل ذخیره خراب است.')}
+}
+function renderSaveSlots(){
+ const el=$('saveSlots');if(!el)return;el.innerHTML='';
+ for(let i=0;i<3;i++){
+  const has=!!localStorage.getItem('owl_save_'+i),wrap=document.createElement('div');
+  wrap.style.cssText='background:#ffffff10;border-radius:12px;padding:8px;text-align:center';
+  wrap.innerHTML=`<b>جایگاه ${i+1}</b><p style="font-size:11px">${has?'دارای ذخیره':'خالی'}</p><button data-save="${i}">ذخیره</button><button data-load="${i}">ادامه</button>`;
+  el.appendChild(wrap);
+ }
+ el.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>saveSlot(+b.dataset.save));
+ el.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>loadSlot(+b.dataset.load));
+}
+
+// Hidden collectible coins
+const coins=[];
+for(let i=0;i<12;i++){
+ const coin=new THREE.Mesh(new THREE.TorusGeometry(.55,.16,7,12),mat(0xffd447));
+ coin.position.set((Math.random()-.5)*270,.9,(Math.random()-.5)*270);coin.rotation.x=Math.PI/2;scene.add(coin);coins.push(coin);
+}
+function nearestNPC(){
+ const p=driving?car.position:player.position;let best=null,dist=5;
+ for(const n of npcs){const d=Math.hypot(n.mesh.position.x-p.x,n.mesh.position.z-p.z);if(d<dist){dist=d;best=n}}
+ return best;
+}
+$('interaction').onclick=()=>{
+ if(insideHouse)return;
+ const n=nearestNPC();
+ if(n){const lines=['سلام! شهر قشنگی داریم، نه؟','اگر دنبال سکه می‌گردی پارک‌ها را هم بگرد.','برای کار می‌توانی از منوی شغل‌ها استفاده کنی.','ترافیک شهر را رعایت کن!'];toast((n.role||'شهروند')+' می‌گوید: '+lines[Math.floor(Math.random()*lines.length)]);return}
+ const p=driving?car.position:player.position;
+ if(Math.hypot(p.x+25,p.z-25)<9&&!driving){
+  house.visible=false;houseInterior.visible=true;insideHouse=true;player.position.set(-25,0,25);missions.home=true;toast('به خانه نمونه وارد شدی. برای خروج دکمه 🚗 را بزن.');return;
+ }
+ toast('چیزی برای تعامل نزدیک تو نیست.');
+};
+function updateInteraction(){
+ const n=nearestNPC(),p=driving?car.position:player.position;
+ const nearHouse=!driving&&Math.hypot(p.x+25,p.z-20)<9;
+ $('interaction').style.display=(n||nearHouse)?'block':'none';
+}
+
+// Movement and simulation
+let last=performance.now(),dayClock=0;
+function updateMap(){
+ const c=$('map'),ctx=c.getContext('2d');ctx.clearRect(0,0,120,120);ctx.fillStyle='#25333b';ctx.fillRect(0,0,120,120);
+ ctx.strokeStyle='#8b969c';ctx.lineWidth=5;
+ for(let i=10;i<120;i+=22){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,120);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(120,i);ctx.stroke()}
+ const p=driving?car.position:player.position;ctx.fillStyle='#f6d65b';ctx.beginPath();ctx.arc(60+p.x*.34,60+p.z*.34,4,0,Math.PI*2);ctx.fill();
+}
+function animate(now){
+ requestAnimationFrame(animate);const dt=Math.min((now-last)/1000,.04);last=now;
+ if(started){
+  dayClock+=dt;
+  // Traffic light phase: green, yellow, red cycle. AI cars stop near intersections on red.
+  trafficLights.forEach(t=>{
+   t.phase=(t.phase+dt)%12;const state=t.phase<6?2:t.phase<8?1:0;
+   t.lamps.forEach((l,i)=>l.material.emissive?.setHex(i===state?[0xff3030,0xffc928,0x26db66][i]:0x000000));
+  });
+  traffic.forEach(t=>{
+   const p=t.mesh.position;
+   const nearCross=t.axis==='x'?Math.abs(((p.x%40)+40)%40)<3:Math.abs(((p.z%40)+40)%40)<3;
+   const phase=(dayClock+(t.lane+40)*.05)%12,red=phase>8;
+   if(!(nearCross&&red)){if(t.axis==='x')p.x+=t.speed*dt;else p.z+=t.speed*dt}
+   if(p.x>155)p.x=-155;if(p.z>155)p.z=-155;
+  });
+  // Pedestrians wander along sidewalks and avoid solid buildings.
+  npcs.forEach(n=>{
+   n.turn-=dt;if(n.turn<=0){n.angle+=(Math.random()-.5)*1.8;n.turn=1.5+Math.random()*3}
+   const nx=n.mesh.position.x+Math.sin(n.angle)*n.speed*dt,nz=n.mesh.position.z+Math.cos(n.angle)*n.speed*dt;
+   if(!blockedAt(nx,nz,.55)){n.mesh.position.x=nx;n.mesh.position.z=nz;n.mesh.rotation.y=n.angle}
+   else n.angle+=Math.PI*.7;
+  });
+  // Coin collection
+  const p=driving?car.position:player.position;
+  coins.forEach(c=>{if(c.visible&&Math.hypot(c.position.x-p.x,c.position.z-p.z)<2.4){c.visible=false;coinsFound++;setMoney(money+25);toast('سکه مخفی پیدا شد! +۲۵');if(coinsFound>=12&&!missions.coins){missions.coins=true;toast('همه سکه‌های مخفی پیدا شدند!')}}});
+  if(taxi){taxiTimer-=dt;if(taxiTimer<=0){taxi.position.set(player.position.x+3,0,player.position.z+3);toast('تاکسی رسید!');taxi=null}}
+  if(driving){
+   if(keys.forward)speed=Math.min(speed+16*dt,18);else if(keys.back)speed=Math.max(speed-20*dt,-7);else speed*=.97;
+   if(keys.left)car.rotation.y-=1.7*dt*(Math.abs(speed)/10+.25);
+   if(keys.right)car.rotation.y+=1.7*dt*(Math.abs(speed)/10+.25);
+   const nx=car.position.x+Math.sin(car.rotation.y)*speed*dt,nz=car.position.z+Math.cos(car.rotation.y)*speed*dt;
+   if(!blockedAt(nx,nz,2.5)){car.position.x=nx;car.position.z=nz}else speed=0;
+  }else if(!insideHouse){
+   const v=9*dt,dx=(keys.forward?Math.sin(player.rotation.y)*v:0)-(keys.back?Math.sin(player.rotation.y)*v:0);
+   const dz=(keys.forward?Math.cos(player.rotation.y)*v:0)-(keys.back?Math.cos(player.rotation.y)*v:0);
+   const nx=player.position.x+dx,nz=player.position.z+dz;
+   if(!blockedAt(nx,nz,.8)){player.position.x=nx;player.position.z=nz}
+   // Left/right buttons rotate the character; movement direction follows facing.
+   if(keys.left)player.rotation.y-=2.3*dt;if(keys.right)player.rotation.y+=2.3*dt;
+  }
+  const target=driving?car:player,dist=camMode===0?9:camMode===1?14:22,height=camMode===2?13:6;
+  const desired=new THREE.Vector3(target.position.x-Math.sin(target.rotation.y)*dist,height,target.position.z-Math.cos(target.rotation.y)*dist);
+  camera.position.lerp(desired,.09);camera.lookAt(target.position.x,driving?1.2:1.1,target.position.z);
+  updateMap();updateInteraction();
+ }
+ renderer.render(scene,camera);
+}
+requestAnimationFrame(animate);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+
+// Prevent Android long-press text selection/context menus on the game controls.
+document.addEventListener('contextmenu',e=>{if(e.target.closest('#controls button, #featurebar button, #phoneBtn, #interaction, #modal button'))e.preventDefault()});
+document.addEventListener('selectstart',e=>{if(e.target.closest('#controls, #featurebar, #phoneBtn, #interaction'))e.preventDefault()});
+document.addEventListener('selectstart',e=>{if(e.target.closest('#controls'))e.preventDefault()});
+// Clear all held controls if browser loses pointer focus.
+addEventListener('pointerup',()=>{for(const k in keys)keys[k]=false;document.querySelectorAll('#controls .btn.active').forEach(b=>b.classList.remove('active'))});
+addEventListener('blur',()=>{for(const k in keys)keys[k]=false;document.querySelectorAll('#controls .btn.active').forEach(b=>b.classList.remove('active'))});
+</script>
+
+</body></html>
